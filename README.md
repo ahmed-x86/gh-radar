@@ -12,11 +12,10 @@ A dynamic and interactive Waybar module that monitors your GitHub activity in re
 
 <br>
 <div align="center">
-  <video src="https://github.com/ahmed-x86/gh-radar/raw/main/demo.mp4" width="800" controls="controls"></video>
-   <p><i>Watch gh-radar in action for testing</i></p>
+  <img src="./demo.gif" alt="gh-radar in action" width="800">
+  <p><i>Watch gh-radar in action!</i></p>
 </div>
 <br>
-
 ## 📂 File Structure
 ```text
 .
