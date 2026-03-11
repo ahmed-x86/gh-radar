@@ -16,6 +16,7 @@ A dynamic and interactive Waybar module that monitors your GitHub activity in re
   <p><i>Watch gh-radar in action!</i></p>
 </div>
 <br>
+
 ## 📂 File Structure
 ```text
 .
