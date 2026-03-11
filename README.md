@@ -117,5 +117,4 @@ Apply the changes by restarting Waybar:
 killall waybar && waybar & disown 
 ```
 
-
 ---
