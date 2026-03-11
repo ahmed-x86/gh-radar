@@ -10,6 +10,13 @@ A dynamic and interactive Waybar module that monitors your GitHub activity in re
 - **Interactive**: Left-click to open your GitHub profile, Right-click to open notifications.
 - **Optimized**: Uses GitHub's `ETag` headers to respect API rate limits.
 
+<br>
+<div align="center">
+  <video src="./demo.mp4" width="800" controls="controls"></video>
+   <p><i>Watch gh-radar in action!</i></p>
+</div>
+<br>
+
 ## 📂 File Structure
 ```text
 .
