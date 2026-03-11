@@ -12,8 +12,8 @@ A dynamic and interactive Waybar module that monitors your GitHub activity in re
 
 <br>
 <div align="center">
-  <video src="./demo.mp4" width="800" controls="controls"></video>
-   <p><i>Watch gh-radar in action!</i></p>
+  <video src="https://github.com/ahmed-x86/gh-radar/raw/main/demo.mp4" width="800" controls="controls"></video>
+   <p><i>Watch gh-radar in action for testing</i></p>
 </div>
 <br>
 
