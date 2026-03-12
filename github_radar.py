@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import requests
 import os
 import time
@@ -9,6 +10,8 @@ import webbrowser
 import json
 import logging
 import glob
+import signal
+import argparse
 from dotenv import load_dotenv
 
 
@@ -28,12 +31,17 @@ if not GITHUB_USERNAME or not GITHUB_PAT:
     sys.exit(1)
 
 class GitHubMonitor:
-    def __init__(self, my_repos_only=False):
+    def __init__(self, my_repos_only=False, manual_only=False):
         self.my_repos_only = my_repos_only
+        self.manual_only = manual_only
         self.seen_event_ids = set()
         self.etags = {}
         self.poll_interval = 20
         self.is_startup = True
+        self.force_refresh = False
+        
+        
+        signal.signal(signal.SIGUSR1, self.handle_refresh_signal)
         
         
         self.session = requests.Session()
@@ -44,6 +52,11 @@ class GitHubMonitor:
         
         
         self.cleanup_avatars()
+
+    def handle_refresh_signal(self, signum, frame):
+        """دالة تُنفذ عند الضغط على الزر الأوسط في Waybar"""
+        logging.info("Refresh signal received!")
+        self.force_refresh = True
 
     def print_waybar(self, text, tooltip):
         output = {
@@ -67,11 +80,9 @@ class GitHubMonitor:
                     logging.error(f"Sound error: {e}")
 
     def cleanup_avatars(self):
-        """تنظيف الصور القديمة من مجلد tmp (نصيحة المراجع)"""
         try:
             files = glob.glob('/tmp/github_avatar_*.png')
             for f in files:
-                
                 if os.stat(f).st_mtime < time.time() - 86400:
                     os.remove(f)
         except Exception as e:
@@ -128,7 +139,6 @@ class GitHubMonitor:
             
         res = self.session.get(url, headers=req_headers, timeout=10)
         
-        
         if 'X-RateLimit-Remaining' in res.headers:
             remaining = int(res.headers['X-RateLimit-Remaining'])
             if remaining < 10:
@@ -147,6 +157,7 @@ class GitHubMonitor:
     def process_events(self):
         url_my_events = f"https://api.github.com/users/{GITHUB_USERNAME}/events"
         url_received = f"https://api.github.com/users/{GITHUB_USERNAME}/received_events"
+        last_check = time.strftime("%H:%M:%S")
         
         try:
             events_mine = self.fetch_events(url_my_events)
@@ -159,13 +170,16 @@ class GitHubMonitor:
             return
 
         all_events = events_mine + events_received
+        
+        
         if not all_events:
+            if self.force_refresh:
+                self.print_waybar("Up to date", f"Checked at {last_check}\nNo events found.")
+                time.sleep(2) 
+                self.print_waybar(GITHUB_USERNAME, f"Last check: {last_check}") 
             return
 
-        
         unique_events = {event['id']: event for event in all_events}.values()
-        
-        
         sorted_events = sorted(unique_events, key=lambda x: x.get('created_at', ''))
         
         new_events_found = False
@@ -174,12 +188,10 @@ class GitHubMonitor:
             if event["type"] == "PushEvent":
                 event_id = event["id"]
                 
-                
                 if event_id in self.seen_event_ids:
                     continue
                     
                 self.seen_event_ids.add(event_id)
-                
                 
                 if len(self.seen_event_ids) > 100:
                     self.seen_event_ids.pop()
@@ -193,24 +205,27 @@ class GitHubMonitor:
                 new_events_found = True
                 
                 if self.is_startup:
-                    
                     repo_name = repo_full_name.split('/')[-1]
                     actor = event["actor"]["display_login"]
-                    self.print_waybar(actor, f"Last activity: {repo_name} (@{actor})")
+                    self.print_waybar(actor, f"Last activity: {repo_name} (@{actor})\nUpdated at: {last_check}")
                     continue
 
-                
-                self._handle_new_push(event, repo_full_name)
+                self._handle_new_push(event, repo_full_name, last_check)
+
+        
+        if self.force_refresh and not new_events_found and not self.is_startup:
+            self.print_waybar("Up to date", f"Checked at {last_check}\nNo new updates.")
+            time.sleep(2) 
+            self.print_waybar(GITHUB_USERNAME, f"Last check: {last_check}") # نعود لاسم المستخدم
 
         self.is_startup = False
 
-        
         if new_events_found:
             self.poll_interval = 10  
         else:
             self.poll_interval = min(60, self.poll_interval + 5)  
 
-    def _handle_new_push(self, event, repo_full_name):
+    def _handle_new_push(self, event, repo_full_name, last_check):
         repo_name = repo_full_name.split('/')[-1]
         actor = event["actor"]["display_login"]
         avatar_url = event["actor"]["avatar_url"]
@@ -235,29 +250,51 @@ class GitHubMonitor:
         full_text = f"[{branch}] {message}"
         short_text = full_text[:35] + ".." if len(full_text) > 35 else full_text
         
-        self.print_waybar(short_text, f"Repo: {repo_name}\nBranch: {branch}\nMsg: {message}")
+        tooltip_msg = f"Repo: {repo_name}\nBranch: {branch}\nMsg: {message}\nUpdated at: {last_check}"
+        self.print_waybar(short_text, tooltip_msg)
 
         notif_body = f"Repo: {repo_name}\nBranch: {branch}\nMsg: {message}"
         avatar_path = self.download_avatar(actor, avatar_url)
         self.send_notification(title, notif_body, repo_full_name, commit_sha, avatar_path)
         
-        
         time.sleep(3)
-        self.print_waybar(repo_name, f"Last activity: {repo_name} (@{actor})")
+        self.print_waybar(repo_name, tooltip_msg)
         time.sleep(3)
-        self.print_waybar(actor, f"Last activity: {repo_name} (@{actor})")
+        self.print_waybar(actor, tooltip_msg)
 
     def run(self):
         try:
             while True:
                 self.process_events()
-                time.sleep(self.poll_interval)
+                
+                
+                self.force_refresh = False
+                
+                if self.manual_only:
+                    
+                    while not self.force_refresh:
+                        time.sleep(1)
+                else:
+                    
+                    wait_time = self.poll_interval
+                    while wait_time > 0 and not self.force_refresh:
+                        time.sleep(1)
+                        wait_time -= 1
+
         except KeyboardInterrupt:
             logging.info("Exiting...")
             sys.exit(0)
 
 if __name__ == "__main__":
-    filter_mode = len(sys.argv) > 1 and sys.argv[1] == "my_repos_only"
-    monitor = GitHubMonitor(my_repos_only=filter_mode)
+    
+    parser = argparse.ArgumentParser(description="GitHub Radar for Waybar")
+    parser.add_argument("mode", nargs="?", default="all", help="Use 'my_repos_only' to track only your repos")
+    parser.add_argument("-t", type=int, default=-1, help="Set to 0 for manual refresh only")
+    
+    args = parser.parse_args()
+    
+    filter_mode = (args.mode == "my_repos_only")
+    manual_mode = (args.t == 0)
+    
+    monitor = GitHubMonitor(my_repos_only=filter_mode, manual_only=manual_mode)
     monitor.run()
-#test
