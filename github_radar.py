@@ -260,3 +260,4 @@ if __name__ == "__main__":
     filter_mode = len(sys.argv) > 1 and sys.argv[1] == "my_repos_only"
     monitor = GitHubMonitor(my_repos_only=filter_mode)
     monitor.run()
+#test
