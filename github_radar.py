@@ -97,22 +97,30 @@ def fetch_events(url):
     req_headers = headers.copy()
     if url in etags:
         req_headers["If-None-Match"] = etags[url]
-    try:
-        res = requests.get(url, headers=req_headers, timeout=10)
-        if res.status_code == 304: return [] 
-        res.raise_for_status()
-        if "ETag" in res.headers:
-            etags[url] = res.headers["ETag"]
-        return res.json()
-    except Exception: return []
+    # أزلنا try/except من هنا لنتمكن من اصطياد خطأ الإنترنت في الدالة الرئيسية
+    res = requests.get(url, headers=req_headers, timeout=10)
+    if res.status_code == 304: return [] 
+    res.raise_for_status()
+    if "ETag" in res.headers:
+        etags[url] = res.headers["ETag"]
+    return res.json()
 
-def get_latest_push(is_startup=False):
+def get_latest_push(is_startup=False, my_repos_only=False):
     global last_event_id
     url_my_events = f"https://api.github.com/users/{GITHUB_USERNAME}/events"
     url_received = f"https://api.github.com/users/{GITHUB_USERNAME}/received_events"
     
-    events_mine = fetch_events(url_my_events)
-    events_received = fetch_events(url_received)
+    # --- التحقق من الاتصال بالإنترنت ---
+    try:
+        events_mine = fetch_events(url_my_events)
+        events_received = fetch_events(url_received)
+    except requests.ConnectionError:
+        print_waybar("Internet Error", "No internet connection")
+        return
+    except Exception:
+        return # تجاهل الأخطاء الأخرى (مثل مشاكل الصلاحيات) بصمت
+    # -----------------------------------
+
     all_events = events_mine + events_received
     
     if not all_events: return
@@ -121,8 +129,14 @@ def get_latest_push(is_startup=False):
 
     for event in all_events:
         if event["type"] == "PushEvent":
-            latest_push_id = event["id"]
             repo_full_name = event["repo"]["name"] 
+            
+            if my_repos_only:
+                repo_owner = repo_full_name.split('/')[0]
+                if repo_owner.lower() != GITHUB_USERNAME.lower():
+                    continue
+
+            latest_push_id = event["id"]
             repo_name = repo_full_name.split('/')[-1] 
             actor = event["actor"]["display_login"]
             avatar_url = event["actor"]["avatar_url"]
@@ -150,35 +164,31 @@ def get_latest_push(is_startup=False):
                 title = f"New Push by @{actor}"
                 if commit_count > 1: title = f"@{actor} pushed {commit_count} commits"
                 
-                # 1. دمج اسم الـ Branch مع الرسالة وقص النص إذا كان طويلاً
                 full_text = f"[{branch}] {message}"
                 short_text = full_text[:35] + ".." if len(full_text) > 35 else full_text
                 
-                # 2. طباعة رسالة الكوميت في الوايبار
                 print_waybar(short_text, f"Repo: {repo_name}\nBranch: {branch}\nMsg: {message}")
 
-                # 3. إرسال الإشعار والتنبيه الصوتي
                 notif_body = f"Repo: {repo_name}\nBranch: {branch}\nMsg: {message}"
                 avatar_path = download_avatar(actor, avatar_url)
                 send_notification(title, notif_body, repo_full_name, commit_sha, avatar_path)
                 
-                # 4. الانتظار 3 ثواني
                 time.sleep(3)
                 
-                # 5. طباعة اسم المستودع والانتظار 3 ثواني إضافية
                 print_waybar(repo_name, f"Last activity: {repo_name} (@{actor})")
                 time.sleep(3)
 
-                # 6. إرجاع اسم المستخدم للوايبار في النهاية
                 print_waybar(actor, f"Last activity: {repo_name} (@{actor})")
             break
 
 if __name__ == "__main__":
-    get_latest_push(is_startup=True)
+    filter_mode = len(sys.argv) > 1 and sys.argv[1] == "my_repos_only"
+    
+    get_latest_push(is_startup=True, my_repos_only=filter_mode)
     
     try:
         while True:
             time.sleep(20)
-            get_latest_push()
+            get_latest_push(my_repos_only=filter_mode)
     except KeyboardInterrupt:
         sys.exit(0)

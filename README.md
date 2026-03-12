@@ -83,7 +83,7 @@ Add the following module to your Waybar config file (under `modules-left`, `modu
 "custom/github-radar": {
     "format": "{}",
     "return-type": "json",
-    "exec": "python3 -u ~/.config/waybar/scripts/github_radar.py",
+    "exec": "python3 -u ~/.config/waybar/scripts/github_radar.py", #or "exec": "~/.config/waybar/scripts/github_radar.py my_repos_only", for show repos in your account only
     "on-click": "xdg-open [https://github.com/ahmed-x86](https://github.com/ahmed-x86)",
     "on-click-right": "xdg-open [https://github.com/notifications](https://github.com/notifications)",
     "restart-interval": 20
