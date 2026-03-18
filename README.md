@@ -23,7 +23,6 @@ A dynamic and interactive Waybar module that monitors your GitHub activity in re
 .
 ├── .env
 ├── github_radar.py
-├── README.md
 └── sounds
     └── freesound_community-retro-audio-logo-94648.mp3
 ```
