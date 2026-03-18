@@ -98,7 +98,7 @@ The script supports arguments to customize its behavior:
 
 Add the following module to your Waybar config file (under `modules-left`, `modules-center`, or `modules-right`):
 
-```jsonc
+```json
 "custom/github-radar": {
     "format": "{}",
     "return-type": "json",
