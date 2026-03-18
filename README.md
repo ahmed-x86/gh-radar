@@ -22,7 +22,6 @@ A dynamic and interactive Waybar module that monitors your GitHub activity in re
 ```text
 .
 ├── .env
-├── .env.example
 ├── github_radar.py
 ├── README.md
 └── sounds
