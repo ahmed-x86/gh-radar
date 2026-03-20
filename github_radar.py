@@ -26,7 +26,7 @@ load_dotenv(ENV_PATH)       #loding .env file
 GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")      #username in thr .env file
 GITHUB_PAT = os.getenv("GITHUB_PAT")                # github token from .env file
 
-if not GITHUB_USERNAME or not GITHUB_PAT:
+if not GITHUB_USERNAME or not GITHUB_PAT:           #if .env file not in used
     print(json.dumps({"text": "⚠️ Config Error", "tooltip": "Check .env file"}))
     sys.exit(1)
 
