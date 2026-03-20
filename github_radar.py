@@ -23,7 +23,7 @@ SOUND_PATH = os.path.join(HOME_DIR, ".config/sounds/freesound_community-retro-au
 
 load_dotenv(ENV_PATH)       #loding .env file
 
-GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")
+GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")      #username in thr .env file
 GITHUB_PAT = os.getenv("GITHUB_PAT")
 
 if not GITHUB_USERNAME or not GITHUB_PAT:
