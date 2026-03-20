@@ -21,7 +21,7 @@ HOME_DIR = os.path.expanduser("~")
 ENV_PATH = os.path.join(HOME_DIR, ".config/waybar/scripts/.env")       #home dir for any user
 SOUND_PATH = os.path.join(HOME_DIR, ".config/sounds/freesound_community-retro-audio-logo-94648.mp3") #you can change this sound 
 
-load_dotenv(ENV_PATH)
+load_dotenv(ENV_PATH)       #loding .env file
 
 GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")
 GITHUB_PAT = os.getenv("GITHUB_PAT")
