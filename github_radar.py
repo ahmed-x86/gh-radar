@@ -60,8 +60,8 @@ class GitHubMonitor:                                            #tags after scri
 
     def print_waybar(self, text, tooltip):
         output = {
-            "text": f" {text}",
-            "tooltip": tooltip,
+            "text": f" {text}",            #you can change this icon  but by custome fonts
+            "tooltip": tooltip,             #active tooltip to show detiles
             "class": "github"
         }
         print(json.dumps(output))
