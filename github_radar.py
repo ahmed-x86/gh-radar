@@ -79,7 +79,7 @@ class GitHubMonitor:                                            #tags after scri
                 except Exception as e:
                     logging.error(f"Sound error: {e}")
 
-    def cleanup_avatars(self):
+    def cleanup_avatars(self):              #download avtar photo
         try:
             files = glob.glob('/tmp/github_avatar_*.png')
             for f in files:
