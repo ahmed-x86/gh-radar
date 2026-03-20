@@ -30,7 +30,7 @@ if not GITHUB_USERNAME or not GITHUB_PAT:           #if .env file not in used
     print(json.dumps({"text": "⚠️ Config Error", "tooltip": "Check .env file"})) # write this massseg
     sys.exit(1)
 
-class GitHubMonitor:
+class GitHubMonitor:                                            #tags after script like extensions
     def __init__(self, my_repos_only=False, manual_only=False):
         self.my_repos_only = my_repos_only
         self.manual_only = manual_only
