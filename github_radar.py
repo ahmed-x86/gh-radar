@@ -32,7 +32,7 @@ if not GITHUB_USERNAME or not GITHUB_PAT:           #if .env file not in used
 
 class GitHubMonitor:                                            #tags after script like extensions
     def __init__(self, my_repos_only=False, manual_only=False):
-        self.my_repos_only = my_repos_only
+        self.my_repos_only = my_repos_only                      #for your repos only
         self.manual_only = manual_only
         self.seen_event_ids = set()
         self.etags = {}
