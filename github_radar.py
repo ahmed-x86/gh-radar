@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 HOME_DIR = os.path.expanduser("~")
-ENV_PATH = os.path.join(HOME_DIR, ".config/waybar/scripts/.env")       # home dir for any user
+ENV_PATH = os.path.join(HOME_DIR, ".config/waybar/scripts/.env")       # home dir for any user in the world
 SOUND_PATH = os.path.join(HOME_DIR, ".config/sounds/freesound_community-retro-audio-logo-94648.mp3") # you can change this sound 
 
 load_dotenv(ENV_PATH)       # loading .env file
