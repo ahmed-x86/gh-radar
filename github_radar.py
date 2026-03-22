@@ -14,7 +14,6 @@ import signal
 import argparse
 from dotenv import load_dotenv
 
-
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 HOME_DIR = os.path.expanduser("~")
@@ -30,10 +29,25 @@ if not GITHUB_USERNAME or not GITHUB_PAT:           #if .env file not in used
     print(json.dumps({"text": "⚠️ Config Error", "tooltip": "Check .env file"})) # write this massseg
     sys.exit(1)
 
+
+ICONS = {
+    1: "",  # GitHub Default
+    2: "󰊤",  # Octocat (القطة)
+    3: "",  # GitHub Alt
+    4: "",  # GitHub Logo
+    5: "",  # Git
+    6: "",  # Git Square
+    7: "",  # Code
+    8: "",  # Git Branch
+    9: "",  # Pull Request
+    10: ""  # Git Commit
+}
+
 class GitHubMonitor:                                            #tags after script like extensions
-    def __init__(self, my_repos_only=False, manual_only=False):
+    def __init__(self, my_repos_only=False, manual_only=False, icon_choice=1):
         self.my_repos_only = my_repos_only                      #for your repos only
         self.manual_only = manual_only
+        self.icon = ICONS.get(icon_choice, ICONS[1])            # اختيار الأيقونة (الافتراضي 1)
         self.seen_event_ids = set()
         self.etags = {}
         self.poll_interval = 20
@@ -42,14 +56,14 @@ class GitHubMonitor:                                            #tags after scri
         
         
         signal.signal(signal.SIGUSR1, self.handle_refresh_signal)
-        
+
         
         self.session = requests.Session()
         self.session.headers.update({
             "Authorization": f"Bearer {GITHUB_PAT}",
             "Accept": "application/vnd.github.v3+json"
         })
-        
+
         
         self.cleanup_avatars()
 
@@ -60,7 +74,7 @@ class GitHubMonitor:                                            #tags after scri
 
     def print_waybar(self, text, tooltip):
         output = {
-            "text": f" {text}",            #you can change this icon  but by custome fonts
+            "text": f"{self.icon} {text}",  # استخدام الأيقونة المختارة هنا
             "tooltip": tooltip,             #active tooltip to show detiles
             "class": "github"
         }
@@ -170,7 +184,7 @@ class GitHubMonitor:                                            #tags after scri
             return
 
         all_events = events_mine + events_received
-        
+
         
         if not all_events:
             if self.force_refresh:
@@ -212,11 +226,10 @@ class GitHubMonitor:                                            #tags after scri
 
                 self._handle_new_push(event, repo_full_name, last_check)
 
-        
         if self.force_refresh and not new_events_found and not self.is_startup:
             self.print_waybar("Up to date", f"Checked at {last_check}\nNo new updates.")
             time.sleep(2) 
-            self.print_waybar(GITHUB_USERNAME, f"Last check: {last_check}") # نعود لاسم المستخدم
+            self.print_waybar(GITHUB_USERNAME, f"Last check: {last_check}")
 
         self.is_startup = False
 
@@ -266,16 +279,16 @@ class GitHubMonitor:                                            #tags after scri
         try:
             while True:
                 self.process_events()
-                
+
                 
                 self.force_refresh = False
                 
                 if self.manual_only:
-                    
+
                     while not self.force_refresh:
                         time.sleep(1)
                 else:
-                    
+
                     wait_time = self.poll_interval
                     while wait_time > 0 and not self.force_refresh:
                         time.sleep(1)
@@ -291,10 +304,14 @@ if __name__ == "__main__":
     parser.add_argument("mode", nargs="?", default="all", help="Use 'my_repos_only' to track only your repos")
     parser.add_argument("-t", type=int, default=-1, help="Set to 0 for manual refresh only")
     
+    
+    parser.add_argument("-icon", type=int, choices=range(1, 11), default=1, help="Choose an icon (1-10)")
+    
     args = parser.parse_args()
     
     filter_mode = (args.mode == "my_repos_only")
     manual_mode = (args.t == 0)
     
-    monitor = GitHubMonitor(my_repos_only=filter_mode, manual_only=manual_mode)
+    
+    monitor = GitHubMonitor(my_repos_only=filter_mode, manual_only=manual_mode, icon_choice=args.icon)
     monitor.run()
