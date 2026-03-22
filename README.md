@@ -1,14 +1,17 @@
+
 # 📡 gh-radar
 
-A dynamic and interactive Waybar module that monitors your GitHub activity in real-time. It features an animated ticker (Commit ➔ Repo ➔ Username), sound alerts, and desktop notifications with user avatars. Never miss a push again!
+A dynamic and interactive Waybar module that monitors your GitHub activity in real-time. It features an animated ticker (Commit ➔ Repo ➔ Username), sound alerts, and desktop notifications with user avatars and multiple quick actions. Never miss a push again!
 
 ## ✨ Features
 - **Animated Ticker**: Waybar text changes dynamically when a new push occurs (shows the branch and commit message, then the repository name, and returns to your username).
 - **Audio Alerts**: Plays a retro notification sound upon detecting a new push.
-- **Avatar Notifications**: Sends a desktop notification containing the committer's GitHub avatar and commit details.
-- **Interactive**: Left-click to open your GitHub profile, Right-click to open notifications.
-- **Manual Refresh (New!)**: Middle-click the module to instantly fetch the latest updates using Linux signals (`SIGUSR1`).
-- **Smart Resource Management**: Dynamic polling intervals (10s when active, 60s when idle) or a complete Sleep Mode (`-t 0`) to save battery and bandwidth.
+- **Rich Notifications**: Sends a desktop notification containing the committer's GitHub avatar, commit details, and interactive buttons (Open Repo, User Profile, View Branch, View Commit).
+- **Interactive Module**: Left-click to open your GitHub profile, Right-click to open notifications.
+- **Targeted Tracking (New!)**: Monitor a specific repository directly by pasting its full GitHub URL or using the `owner/repo` format.
+- **Custom Polling Intervals (New!)**: Define your own base polling interval to balance real-time updates with API rate limits.
+- **Manual Refresh**: Middle-click the module to instantly fetch the latest updates using Linux signals (`SIGUSR1`).
+- **Smart Resource Management**: Dynamic polling intervals that automatically adjust based on activity, or a complete Sleep Mode (`-t 0`) to save battery and bandwidth.
 - **Optimized**: Uses GitHub's `ETag` headers to respect API rate limits.
 
 <br>
@@ -32,7 +35,7 @@ A dynamic and interactive Waybar module that monitors your GitHub activity in re
 **1. Clone the repository**
 
 ```bash
-git clone https://github.com/ahmed-x86/gh-radar.git
+git clone [https://github.com/ahmed-x86/gh-radar.git](https://github.com/ahmed-x86/gh-radar.git)
 cd gh-radar
 ```
 
@@ -42,11 +45,11 @@ cd gh-radar
 # Copy the sound file to your config folder
 cp -r sounds ~/.config/
 ```
-```
+```bash
 # Create the scripts directory for Waybar if it doesn't exist
 mkdir -p ~/.config/waybar/scripts
 ```
-```
+```bash
 # Copy the Python script and make it executable
 cp github_radar.py ~/.config/waybar/scripts/
 chmod +x ~/.config/waybar/scripts/github_radar.py
@@ -82,14 +85,15 @@ The script supports arguments to customize its behavior:
 
 * **`my_repos_only`**: Only triggers alerts for repositories you own (ignores activity from other repos you watch/star).
 * **`-t 0`**: **Manual Mode**. The script will not poll GitHub automatically. It will sleep completely until you middle-click the Waybar module.
-* **`-icon <1-10>`**: **(New!)** Choose the icon displayed in Waybar. Choose a number from 1 to 10 (e.g., `-icon 2` for the Octocat, `-icon 1` for default GitHub logo).
+* **`-icon <1-10>`**: Choose the icon displayed in Waybar. Choose a number from 1 to 10 (e.g., `-icon 2` for the Octocat, `-icon 1` for default GitHub logo).
+* **`--repo <url>`**: **(New!)** Track a specific repository. You can paste the full URL (e.g., `https://github.com/username/project`) or use the standard `owner/repo` format.
+* **`--interval <seconds>`**: **(New!)** Set the base polling interval in seconds (default is `20`).
 
 **Examples:**
 
-**Examples:**
-
-* `github_radar.py` (Default: Tracks everything, dynamic polling, default icon)
+* `github_radar.py` (Default: Tracks everything, 20s base polling, default icon)
 * `github_radar.py my_repos_only -icon 2` (Tracks only your repos, uses Octocat icon)
+* `github_radar.py --repo https://github.com/ahmed-x86/gh-radar --interval 60` (Tracks a specific repo using its URL, checks every 60 seconds)
 * `github_radar.py -t 0 -icon 5` (Manual mode ONLY, uses Git logo)
 
 ## 🖥️ Waybar Configuration
@@ -98,14 +102,11 @@ The script supports arguments to customize its behavior:
 
 Add the following module to your Waybar config file (under `modules-left`, `modules-center`, or `modules-right`):
 
-
-Add the following module to your Waybar config file:
-
 ```json
 "custom/github-radar": {
     "format": "{}",
     "return-type": "json",
-    "exec": "~/.config/waybar/scripts/github_radar.py my_repos_only -t 0 -icon 2", // Customize args here!
+    "exec": "python3 ~/.config/waybar/scripts/github_radar.py --repo [https://github.com/ahmed-x86/gh-radar](https://github.com/ahmed-x86/gh-radar) --interval 30 -icon 2",
     "on-click": "xdg-open [https://github.com/ahmed-x86](https://github.com/ahmed-x86)",
     "on-click-right": "xdg-open [https://github.com/notifications](https://github.com/notifications)",
     "on-click-middle": "pkill -USR1 -f github_radar.py",
@@ -113,12 +114,11 @@ Add the following module to your Waybar config file:
 }
 ```
 
-*(Note: Change `ahmed-x86` to your actual GitHub username in the `on-click` URL).*
+*(Note: Change `ahmed-x86` to your actual GitHub username in the `on-click` URL, and adjust the `--repo` flag to your desired repository).*
 
 ### 2. Styling (`style.css`)
 
 Choose the theme that matches your current Waybar setup and add it to your `style.css`.
-
 
 #### 1. Default (GitHub Dark)
 
@@ -141,6 +141,7 @@ Choose the theme that matches your current Waybar setup and add it to your `styl
     border-color: #2ea043;
 }
 ```
+
 #### 2. Catppuccin
 ```css
 /* GitHub Radar - Catppuccin Mocha Theme */
@@ -161,6 +162,7 @@ Choose the theme that matches your current Waybar setup and add it to your `styl
     border-color: #a6e3a1;
 }
 ```
+
 #### 3. Dracula
 ```css
 /* GitHub Radar - Dracula Theme */
@@ -189,6 +191,4 @@ Apply the changes by restarting Waybar:
 ```bash
 killall waybar && waybar & disown 
 ```
-
-
----
+```
