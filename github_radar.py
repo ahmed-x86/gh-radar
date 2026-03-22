@@ -21,7 +21,7 @@ ENV_PATH = os.path.join(HOME_DIR, ".config/waybar/scripts/.env")       # home di
 SOUND_PATH = os.path.join(HOME_DIR, ".config/sounds/freesound_community-retro-audio-logo-94648.mp3") # you can change this sound 
 
 load_dotenv(ENV_PATH)       # loading .env file
-
+                            # this is for test
 GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")      # username in the .env file
 GITHUB_PAT = os.getenv("GITHUB_PAT")                # github token from .env file
 
