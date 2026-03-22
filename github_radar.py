@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 
 import requests
@@ -121,7 +122,7 @@ class GitHubMonitor:
                 branch_url = f"https://github.com/{repo_full_name}/tree/{branch}"
 
                 self.play_sound()
-                
+
                 
                 cmd = [
                     "notify-send", "-a", "GitHub Monitor", "-i", avatar_path, 
@@ -130,7 +131,6 @@ class GitHubMonitor:
                     "--action=branch=View Branch"
                 ]
                 
-
                 if commit_sha:
                     cmd.append("--action=commit=View Commit")
                 
@@ -139,7 +139,6 @@ class GitHubMonitor:
                 result = subprocess.run(cmd, capture_output=True, text=True)
                 action = result.stdout.strip()
                 
-
                 if action == "repo":
                     webbrowser.open(repo_url)
                 elif action == "commit":
@@ -292,7 +291,6 @@ class GitHubMonitor:
         notif_body = f"Repo: {repo_name}\nBranch: {branch}\nMsg: {message}"
         avatar_path = self.download_avatar(actor, avatar_url)
         
-
         self.send_notification(title, notif_body, repo_full_name, commit_sha, avatar_path, actor, branch)
         
         time.sleep(3)
@@ -323,7 +321,8 @@ class GitHubMonitor:
 if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description="GitHub Radar for Waybar")
-    parser.add_argument("mode", nargs="?", default="all", help="Use 'my_repos_only' to track only your repos")
+    # Changed default to "all_repos" for clarity
+    parser.add_argument("mode", nargs="?", choices=["all_repos", "my_repos_only"], default="all_repos", help="Use 'my_repos_only' to track only your repos, or 'all_repos' for everything")
     parser.add_argument("-t", type=int, default=-1, help="Set to 0 for manual refresh only")
     parser.add_argument("-icon", type=int, choices=range(1, 11), default=1, help="Choose an icon (1-10)")
     parser.add_argument("--repo", type=str, default=None, help="Track a specific repository (URL or owner/repo)")
