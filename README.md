@@ -98,15 +98,18 @@ The script supports arguments to customize its behavior:
 
 Add the following module to your Waybar config file (under `modules-left`, `modules-center`, or `modules-right`):
 
+
+Add the following module to your Waybar config file:
+
 ```json
 "custom/github-radar": {
     "format": "{}",
     "return-type": "json",
-    "exec": "~/.config/waybar/scripts/github_radar.py my_repos_only", // Add '-t 0' here if you want manual mode
-    "on-click": "xdg-open https://github.com/ahmed-x86",
-    "on-click-right": "xdg-open https://github.com/notifications",
-    "on-click-middle": "pkill -USR1 -f github_radar.py", // Sends the refresh signal
-    "restart-interval": 0 // Set to 0 because the script runs its own background loop
+    "exec": "~/.config/waybar/scripts/github_radar.py my_repos_only -t 0 -icon 2", // Customize args here!
+    "on-click": "xdg-open [https://github.com/ahmed-x86](https://github.com/ahmed-x86)",
+    "on-click-right": "xdg-open [https://github.com/notifications](https://github.com/notifications)",
+    "on-click-middle": "pkill -USR1 -f github_radar.py",
+    "restart-interval": 0
 }
 ```
 
