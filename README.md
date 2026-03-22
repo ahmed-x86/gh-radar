@@ -83,11 +83,13 @@ pip install requests python-dotenv
 
 The script supports arguments to customize its behavior:
 
-* **`my_repos_only`**: Only triggers alerts for repositories you own (ignores activity from other repos you watch/star).
-* **`-t 0`**: **Manual Mode**. The script will not poll GitHub automatically. It will sleep completely until you middle-click the Waybar module.
-* **`-icon <1-10>`**: Choose the icon displayed in Waybar. Choose a number from 1 to 10 (e.g., `-icon 2` for the Octocat, `-icon 1` for default GitHub logo).
-* **`--repo <url>`**: **(New!)** Track a specific repository. You can paste the full URL (e.g., `https://github.com/username/project`) or use the standard `owner/repo` format.
-* **`--interval <seconds>`**: **(New!)** Set the base polling interval in seconds (default is `20`).
+| Argument / Flag | Description |
+| :--- | :--- |
+| `my_repos_only` | Only triggers alerts for repositories you own (ignores activity from other repos you watch/star). |
+| `-t 0` | **Manual Mode**. The script will not poll GitHub automatically. It will sleep completely until you middle-click the Waybar module. |
+| `-icon <1-10>` | Choose the icon displayed in Waybar. Choose a number from 1 to 10 (e.g., `-icon 2` for the Octocat, `-icon 1` for default GitHub logo). |
+| `--repo <url>` | **(New!)** Track a specific repository. You can paste the full URL (e.g., `https://github.com/username/project`) or use the standard `owner/repo` format. |
+| `--interval <sec>` | **(New!)** Set the base polling interval in seconds (default is `20`). |
 
 **Examples:**
 
@@ -190,5 +192,4 @@ Apply the changes by restarting Waybar:
 
 ```bash
 killall waybar && waybar & disown 
-```
 ```
