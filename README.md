@@ -82,13 +82,15 @@ The script supports arguments to customize its behavior:
 
 * **`my_repos_only`**: Only triggers alerts for repositories you own (ignores activity from other repos you watch/star).
 * **`-t 0`**: **Manual Mode**. The script will not poll GitHub automatically. It will sleep completely until you middle-click the Waybar module.
+* **`-icon <1-10>`**: **(New!)** Choose the icon displayed in Waybar. Choose a number from 1 to 10 (e.g., `-icon 2` for the Octocat, `-icon 1` for default GitHub logo).
 
 **Examples:**
 
-* `github_radar.py` (Default: Tracks everything, dynamic polling)
-* `github_radar.py my_repos_only` (Tracks only your repos, dynamic polling)
-* `github_radar.py -t 0` (Tracks everything, manual middle-click refresh ONLY)
-* `github_radar.py my_repos_only -t 0` (Tracks only your repos, manual middle-click refresh ONLY)
+**Examples:**
+
+* `github_radar.py` (Default: Tracks everything, dynamic polling, default icon)
+* `github_radar.py my_repos_only -icon 2` (Tracks only your repos, uses Octocat icon)
+* `github_radar.py -t 0 -icon 5` (Manual mode ONLY, uses Git logo)
 
 ## 🖥️ Waybar Configuration
 
