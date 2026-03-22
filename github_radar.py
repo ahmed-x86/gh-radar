@@ -17,16 +17,16 @@ from dotenv import load_dotenv
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 HOME_DIR = os.path.expanduser("~")
-ENV_PATH = os.path.join(HOME_DIR, ".config/waybar/scripts/.env")       # home dir for any user in the world
-SOUND_PATH = os.path.join(HOME_DIR, ".config/sounds/freesound_community-retro-audio-logo-94648.mp3") # you can change this sound 
+ENV_PATH = os.path.join(HOME_DIR, ".config/waybar/scripts/.env")
+SOUND_PATH = os.path.join(HOME_DIR, ".config/sounds/freesound_community-retro-audio-logo-94648.mp3")
 
-load_dotenv(ENV_PATH)       # loading .env file
-                            # this is for test
-GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")      # username in the .env file
-GITHUB_PAT = os.getenv("GITHUB_PAT")                # github token from .env file
+load_dotenv(ENV_PATH)
 
-if not GITHUB_USERNAME or not GITHUB_PAT:           # if .env file not in used
-    print(json.dumps({"text": "⚠️ Config Error", "tooltip": "Check .env file"})) # write this message
+GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")
+GITHUB_PAT = os.getenv("GITHUB_PAT")
+
+if not GITHUB_USERNAME or not GITHUB_PAT:
+    print(json.dumps({"text": "⚠️ Config Error", "tooltip": "Check .env file"}))
     sys.exit(1)
 
 ICONS = {
@@ -42,14 +42,16 @@ ICONS = {
     10: ""  # Git Commit
 }
 
-class GitHubMonitor:                                            
-    def __init__(self, my_repos_only=False, manual_only=False, icon_choice=1):
-        self.my_repos_only = my_repos_only                      
+class GitHubMonitor:
+    def __init__(self, my_repos_only=False, manual_only=False, icon_choice=1, target_repo=None, poll_interval=20):
+        self.my_repos_only = my_repos_only
         self.manual_only = manual_only
-        self.icon = ICONS.get(icon_choice, ICONS[1])            
+        self.target_repo = target_repo                          # The specific repo to track (owner/repo format)
+        self.icon = ICONS.get(icon_choice, ICONS[1])
         self.seen_event_ids = set()
         self.etags = {}
-        self.poll_interval = 20
+        self.base_poll_interval = poll_interval                 # User-defined interval
+        self.poll_interval = poll_interval
         self.is_startup = True
         self.force_refresh = False
         
@@ -64,14 +66,13 @@ class GitHubMonitor:
         self.cleanup_avatars()
 
     def handle_refresh_signal(self, signum, frame):
-        """Function executed when the middle button in Waybar is pressed"""
         logging.info("Refresh signal received!")
         self.force_refresh = True
 
     def print_waybar(self, text, tooltip):
         output = {
-            "text": f"{self.icon} {text}",  
-            "tooltip": tooltip,             
+            "text": f"{self.icon} {text}",
+            "tooltip": tooltip,
             "class": "github"
         }
         print(json.dumps(output))
@@ -89,7 +90,7 @@ class GitHubMonitor:
                 except Exception as e:
                     logging.error(f"Sound error: {e}")
 
-    def cleanup_avatars(self):              
+    def cleanup_avatars(self):
         try:
             files = glob.glob('/tmp/github_avatar_*.png')
             for f in files:
@@ -111,11 +112,9 @@ class GitHubMonitor:
                 return "github"
         return avatar_path
 
-    # Updated method to accept actor and branch
     def send_notification(self, title, body, repo_full_name, commit_sha, avatar_path, actor, branch):
         def _notify():
             try:
-                # Setup URLs
                 repo_url = f"https://github.com/{repo_full_name}"
                 commit_url = f"https://github.com/{repo_full_name}/commit/{commit_sha}" if commit_sha else repo_url
                 actor_url = f"https://github.com/{actor}"
@@ -123,7 +122,7 @@ class GitHubMonitor:
 
                 self.play_sound()
                 
-                # Base command with Open Repo, User Profile, and View Branch actions
+                
                 cmd = [
                     "notify-send", "-a", "GitHub Monitor", "-i", avatar_path, 
                     "--action=repo=Open Repo",
@@ -131,7 +130,7 @@ class GitHubMonitor:
                     "--action=branch=View Branch"
                 ]
                 
-                # Add View Commit action if a commit SHA exists
+
                 if commit_sha:
                     cmd.append("--action=commit=View Commit")
                 
@@ -140,7 +139,7 @@ class GitHubMonitor:
                 result = subprocess.run(cmd, capture_output=True, text=True)
                 action = result.stdout.strip()
                 
-                # Handle actions based on the user's click
+
                 if action == "repo":
                     webbrowser.open(repo_url)
                 elif action == "commit":
@@ -228,7 +227,13 @@ class GitHubMonitor:
                     self.seen_event_ids.pop()
 
                 repo_full_name = event["repo"]["name"]
-                if self.my_repos_only:
+                
+                # Check for target specific repository
+                if self.target_repo and repo_full_name.lower() != self.target_repo.lower():
+                    continue
+
+                # Check for my repos only
+                if self.my_repos_only and not self.target_repo:
                     repo_owner = repo_full_name.split('/')[0]
                     if repo_owner.lower() != GITHUB_USERNAME.lower():
                         continue
@@ -250,10 +255,11 @@ class GitHubMonitor:
 
         self.is_startup = False
 
+        # Adjust polling interval dynamically
         if new_events_found:
-            self.poll_interval = 10  
+            self.poll_interval = max(10, self.base_poll_interval // 2)  
         else:
-            self.poll_interval = min(60, self.poll_interval + 5)  
+            self.poll_interval = min(self.base_poll_interval * 3, self.poll_interval + 5)  
 
     def _handle_new_push(self, event, repo_full_name, last_check):
         repo_name = repo_full_name.split('/')[-1]
@@ -286,7 +292,7 @@ class GitHubMonitor:
         notif_body = f"Repo: {repo_name}\nBranch: {branch}\nMsg: {message}"
         avatar_path = self.download_avatar(actor, avatar_url)
         
-        # Passing actor and branch to the updated send_notification method
+
         self.send_notification(title, notif_body, repo_full_name, commit_sha, avatar_path, actor, branch)
         
         time.sleep(3)
@@ -320,11 +326,29 @@ if __name__ == "__main__":
     parser.add_argument("mode", nargs="?", default="all", help="Use 'my_repos_only' to track only your repos")
     parser.add_argument("-t", type=int, default=-1, help="Set to 0 for manual refresh only")
     parser.add_argument("-icon", type=int, choices=range(1, 11), default=1, help="Choose an icon (1-10)")
+    parser.add_argument("--repo", type=str, default=None, help="Track a specific repository (URL or owner/repo)")
+    parser.add_argument("--interval", type=int, default=20, help="Set base polling interval in seconds (default: 20)")
     
     args = parser.parse_args()
+    
+    # Logic to parse the URL and extract 'owner/repo'
+    target_repository = args.repo
+    if target_repository:
+        # If the user passed a full URL, strip the domain part
+        if "github.com/" in target_repository:
+            target_repository = target_repository.split("github.com/")[-1]
+        
+        # Remove trailing slashes if they exist
+        target_repository = target_repository.strip("/")
     
     filter_mode = (args.mode == "my_repos_only")
     manual_mode = (args.t == 0)
     
-    monitor = GitHubMonitor(my_repos_only=filter_mode, manual_only=manual_mode, icon_choice=args.icon)
+    monitor = GitHubMonitor(
+        my_repos_only=filter_mode, 
+        manual_only=manual_mode, 
+        icon_choice=args.icon,
+        target_repo=target_repository,  # Passing the cleaned up repo format
+        poll_interval=args.interval
+    )
     monitor.run()
