@@ -17,22 +17,21 @@ from dotenv import load_dotenv
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 HOME_DIR = os.path.expanduser("~")
-ENV_PATH = os.path.join(HOME_DIR, ".config/waybar/scripts/.env")       #home dir for any user
-SOUND_PATH = os.path.join(HOME_DIR, ".config/sounds/freesound_community-retro-audio-logo-94648.mp3") #you can change this sound 
+ENV_PATH = os.path.join(HOME_DIR, ".config/waybar/scripts/.env")       # home dir for any user
+SOUND_PATH = os.path.join(HOME_DIR, ".config/sounds/freesound_community-retro-audio-logo-94648.mp3") # you can change this sound 
 
-load_dotenv(ENV_PATH)       #loding .env file
+load_dotenv(ENV_PATH)       # loading .env file
 
-GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")      #username in thr .env file
+GITHUB_USERNAME = os.getenv("GITHUB_USERNAME")      # username in the .env file
 GITHUB_PAT = os.getenv("GITHUB_PAT")                # github token from .env file
 
-if not GITHUB_USERNAME or not GITHUB_PAT:           #if .env file not in used
-    print(json.dumps({"text": "⚠️ Config Error", "tooltip": "Check .env file"})) # write this massseg
+if not GITHUB_USERNAME or not GITHUB_PAT:           # if .env file not in used
+    print(json.dumps({"text": "⚠️ Config Error", "tooltip": "Check .env file"})) # write this message
     sys.exit(1)
-
 
 ICONS = {
     1: "",  # GitHub Default
-    2: "󰊤",  # Octocat (القطة)
+    2: "󰊤",  # Octocat
     3: "",  # GitHub Alt
     4: "",  # GitHub Logo
     5: "",  # Git
@@ -43,39 +42,36 @@ ICONS = {
     10: ""  # Git Commit
 }
 
-class GitHubMonitor:                                            #tags after script like extensions
+class GitHubMonitor:                                            
     def __init__(self, my_repos_only=False, manual_only=False, icon_choice=1):
-        self.my_repos_only = my_repos_only                      #for your repos only
+        self.my_repos_only = my_repos_only                      
         self.manual_only = manual_only
-        self.icon = ICONS.get(icon_choice, ICONS[1])            # اختيار الأيقونة (الافتراضي 1)
+        self.icon = ICONS.get(icon_choice, ICONS[1])            
         self.seen_event_ids = set()
         self.etags = {}
         self.poll_interval = 20
         self.is_startup = True
         self.force_refresh = False
         
-        
         signal.signal(signal.SIGUSR1, self.handle_refresh_signal)
 
-        
         self.session = requests.Session()
         self.session.headers.update({
             "Authorization": f"Bearer {GITHUB_PAT}",
             "Accept": "application/vnd.github.v3+json"
         })
 
-        
         self.cleanup_avatars()
 
     def handle_refresh_signal(self, signum, frame):
-        """دالة تُنفذ عند الضغط على الزر الأوسط في Waybar"""
+        """Function executed when the middle button in Waybar is pressed"""
         logging.info("Refresh signal received!")
         self.force_refresh = True
 
     def print_waybar(self, text, tooltip):
         output = {
-            "text": f"{self.icon} {text}",  # استخدام الأيقونة المختارة هنا
-            "tooltip": tooltip,             #active tooltip to show detiles
+            "text": f"{self.icon} {text}",  
+            "tooltip": tooltip,             
             "class": "github"
         }
         print(json.dumps(output))
@@ -93,7 +89,7 @@ class GitHubMonitor:                                            #tags after scri
                 except Exception as e:
                     logging.error(f"Sound error: {e}")
 
-    def cleanup_avatars(self):              #download avtar photo
+    def cleanup_avatars(self):              
         try:
             files = glob.glob('/tmp/github_avatar_*.png')
             for f in files:
@@ -115,23 +111,45 @@ class GitHubMonitor:                                            #tags after scri
                 return "github"
         return avatar_path
 
-    def send_notification(self, title, body, repo_full_name, commit_sha, avatar_path):
+    # Updated method to accept actor and branch
+    def send_notification(self, title, body, repo_full_name, commit_sha, avatar_path, actor, branch):
         def _notify():
             try:
+                # Setup URLs
                 repo_url = f"https://github.com/{repo_full_name}"
                 commit_url = f"https://github.com/{repo_full_name}/commit/{commit_sha}" if commit_sha else repo_url
+                actor_url = f"https://github.com/{actor}"
+                branch_url = f"https://github.com/{repo_full_name}/tree/{branch}"
+
                 self.play_sound()
-                cmd = ["notify-send", "-a", "GitHub Monitor", "-i", avatar_path, "--action=repo=Open Repo"]
+                
+                # Base command with Open Repo, User Profile, and View Branch actions
+                cmd = [
+                    "notify-send", "-a", "GitHub Monitor", "-i", avatar_path, 
+                    "--action=repo=Open Repo",
+                    "--action=actor=User Profile",
+                    "--action=branch=View Branch"
+                ]
+                
+                # Add View Commit action if a commit SHA exists
                 if commit_sha:
                     cmd.append("--action=commit=View Commit")
+                
                 cmd.extend([title, body])
                 
                 result = subprocess.run(cmd, capture_output=True, text=True)
                 action = result.stdout.strip()
+                
+                # Handle actions based on the user's click
                 if action == "repo":
                     webbrowser.open(repo_url)
                 elif action == "commit":
                     webbrowser.open(commit_url)
+                elif action == "actor":
+                    webbrowser.open(actor_url)
+                elif action == "branch":
+                    webbrowser.open(branch_url)
+
             except Exception as e:
                 logging.error(f"Notification error: {e}")
         threading.Thread(target=_notify, daemon=True).start()
@@ -185,7 +203,6 @@ class GitHubMonitor:                                            #tags after scri
 
         all_events = events_mine + events_received
 
-        
         if not all_events:
             if self.force_refresh:
                 self.print_waybar("Up to date", f"Checked at {last_check}\nNo events found.")
@@ -268,7 +285,9 @@ class GitHubMonitor:                                            #tags after scri
 
         notif_body = f"Repo: {repo_name}\nBranch: {branch}\nMsg: {message}"
         avatar_path = self.download_avatar(actor, avatar_url)
-        self.send_notification(title, notif_body, repo_full_name, commit_sha, avatar_path)
+        
+        # Passing actor and branch to the updated send_notification method
+        self.send_notification(title, notif_body, repo_full_name, commit_sha, avatar_path, actor, branch)
         
         time.sleep(3)
         self.print_waybar(repo_name, tooltip_msg)
@@ -280,15 +299,12 @@ class GitHubMonitor:                                            #tags after scri
             while True:
                 self.process_events()
 
-                
                 self.force_refresh = False
                 
                 if self.manual_only:
-
                     while not self.force_refresh:
                         time.sleep(1)
                 else:
-
                     wait_time = self.poll_interval
                     while wait_time > 0 and not self.force_refresh:
                         time.sleep(1)
@@ -303,15 +319,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="GitHub Radar for Waybar")
     parser.add_argument("mode", nargs="?", default="all", help="Use 'my_repos_only' to track only your repos")
     parser.add_argument("-t", type=int, default=-1, help="Set to 0 for manual refresh only")
-    
-    
     parser.add_argument("-icon", type=int, choices=range(1, 11), default=1, help="Choose an icon (1-10)")
     
     args = parser.parse_args()
     
     filter_mode = (args.mode == "my_repos_only")
     manual_mode = (args.t == 0)
-    
     
     monitor = GitHubMonitor(my_repos_only=filter_mode, manual_only=manual_mode, icon_choice=args.icon)
     monitor.run()
