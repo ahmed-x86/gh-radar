@@ -35,7 +35,7 @@ A dynamic and interactive Waybar module that monitors your GitHub activity in re
 **1. Clone the repository**
 
 ```bash
-git clone [https://github.com/ahmed-x86/gh-radar.git](https://github.com/ahmed-x86/gh-radar.git)
+git clone https://github.com/ahmed-x86/gh-radar.git
 cd gh-radar
 ```
 
