@@ -74,8 +74,10 @@ Make sure you have the required Python libraries and system tools:
 
 ```bash
 pip install requests python-dotenv
+```
 # Ensure you have 'mpv' (or 'paplay') and 'libnotify' installed on your system
 # or install it by pacman
+```
 # sudo pacman -S python-requests python-dotenv
 ```
 
